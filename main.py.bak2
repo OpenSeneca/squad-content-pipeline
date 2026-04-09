@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""
+Content Pipeline CLI
+Scans Marcus + Galen learnings/ for ## Tweet Draft, BLOG ANGLE:, extracts text blocks, compiles into daily digest file ~/workspace/outputs/content-digest-YYYY-MM-DD.md
+"""
+
+import re
+import sys
+import os
+from datetime import datetime
+from pathlib import Path
+
+# Add telemetry logging
+try:
+    # Add the telemetry helper to path
+    telemetry_path = Path.home() / ".openclaw" / "workspace" / "tools" / "telemetry-helper"
+    if telemetry_path.exists():
+        sys.path.append(str(telemetry_path))
+        from telemetry_helper import log_usage
+    else:
+        # Fallback: define a simple logger
+        def log_usage(tool_name: str, action: str = "run"):
+            pass  # No-op if telemetry helper not available
+except ImportError:
+    def log_usage(tool_name: str, action: str = "run"):
+        pass  # No-op
+
+def extract_tweet_drafts_and_blog_angles(content: str) -> tuple:
+    """Extract tweet drafts and blog angles from content."""
+    tweet_drafts = []
+    blog_angles = []
+    
+    # Find all ## Tweet Draft sections (singular or plural)
+    tweet_pattern = r'##\s+Tweet\s+Drafts?\s*\n(.*?)(?=\n##|\Z)'
+    tweet_matches = re.findall(tweet_pattern, content, re.IGNORECASE | re.DOTALL)
+    for match in tweet_matches:
+        # Extract lines that start with "Tweet Draft:" (case-insensitive)
+        lines = match.split('\n')
+        for line in lines:
+            line_stripped = line.strip()
+            if line_stripped.lower().startswith('tweet draft:'):
+                # Remove the "Tweet Draft:" prefix
+                tweet_text = line_stripped[len('Tweet Draft:'):].strip()
+                if tweet_text:
+                    tweet_drafts.append(tweet_text)
+    
+    # Find all ## BLOG ANGLE: sections
+    blog_pattern = r'##\s+BLOG\s+ANGLE:\s*\n(.*?)(?=\n##|\Z)'
+    blog_matches = re.findall(blog_pattern, content, re.IGNORECASE | re.DOTALL)
+    for match in blog_matches:
+        blog_angles.append(match.strip())
+    
+    return tweet_drafts, blog_angles
+
+def process_learning_file(filepath: Path) -> tuple:
+    """Process a single learning file and extract tweet drafts and blog angles."""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        tweets, angles = extract_tweet_drafts_and_blog_angles(content)
+        return tweets, angles
+    except Exception as e:
+        print(f"Error processing {filepath}: {e}", file=sys.stderr)
+        return [], []
+
+def main():
+    # Import telemetry helper here to avoid circular imports
+    try:
+        from telemetry_helper import log_usage
+    except ImportError:
+        def log_usage(tool_name: str, action: str = "run"):
+            pass
+    
+    # Log usage
+    log_usage("content-pipeline", "run")
+    
+    # Define paths
+    workspace = Path.home() / ".openclaw" / "workspace"
+    learnings_dir = Path.home() / ".openclaw" / "learnings"
+    output_dir = workspace / "outputs"
+    
+    # Create output directory if it doesn't exist
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Get today's date for output file
+    today = datetime.now().strftime("%Y-%m-%d")
+    output_file = output_dir / f"content-digest-{today}.md"
+    
+    # Find all learning files (assuming all are from Marcus/Galen)
+    all_tweets = []
+    all_angles = []
+    
+    # Process all learning files in the learnings directory
+    file_count = 0
+    for learning_file in learnings_dir.glob("*.md"):
+        # Skip seed files and archive directories
+        if learning_file.name.startswith("seed-") or "archive" in str(learning_file):
+            continue
+        file_count += 1
+        tweets, angles = process_learning_file(learning_file)
+        all_tweets.extend(tweets)
+        all_angles.extend(angles)
+    
+    print(f"Processed {file_count} learning files")
+    
+    # Generate output
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(f"# Content Digest - {today}\n")
+        f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
+        f.write("=" * 50 + "\n\n")
+        
+        if all_tweets:
+            f.write("## Tweet Drafts\n\n")
+            for i, tweet in enumerate(all_tweets, 1):
+                f.write(f"{i}. {tweet}\n\n")
+        
+        if all_angles:
+            f.write("## Blog Angles\n\n")
+            for i, angle in enumerate(all_angles, 1):
+                f.write(f"{i}. {angle}\n\n")
+        
+        if not all_tweets and not all_angles:
+            f.write("No tweet drafts or blog angles found today.\n")
+    
+    print(f"Content digest generated: {output_file}")
+    print(f"Found {len(all_tweets)} tweet drafts and {len(all_angles)} blog angles")
+    
+    # Send Telegram notification
+    if (all_tweets or all_angles):
+        try:
+            # Try to import telegram functionality from send_telegram_notification pattern
+            telegram_message = f"""📄 **Content Digest Generated**
+
+**Date:** {today}
+**Tweets:** {len(all_tweets)}
+**Blog Angles:** {len(all_angles)}
+
+Output: `{output_file.name}`"""
+            
+            # Try sending via curl to Telegram API
+            import subprocess
+            bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+            chat_id = os.environ.get('TELEGRAM_CHAT_ID', '')
+            
+            if bot_token and chat_id:
+                url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+                data = {
+                    "chat_id": chat_id,
+                    "text": telegram_message,
+                    "parse_mode": "Markdown"
+                }
+                
+                result = subprocess.run(
+                    ['curl', '-s', '-X', 'POST', url, '-H', 'Content-Type: application/json',
+                     '-d', json.dumps(data)],
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                
+                if result.returncode == 0:
+                    try:
+                        response = json.loads(result.stdout)
+                        if response.get('ok'):
+                            print("📢 Telegram notification sent")
+                        else:
+                            print("⚠️  Telegram notification failed")
+                    except:
+                        print("⚠️  Telegram notification failed")
+                else:
+                    print("⚠️  Telegram secrets not configured, skipping notification")
+        except Exception as e:
+            print(f"⚠️  Telegram notification error: {e}")
+
+if __name__ == '__main__':
+    main()
