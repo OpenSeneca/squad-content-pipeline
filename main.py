@@ -3,6 +3,9 @@
 Content Pipeline CLI for Seneca
 Scans Marcus/Galen learnings/ for tweet drafts and blog angles,
 outputs daily digest to workspace/outputs/
+Updated to handle Marcus/Galen format:
+- ## Tweet Draft (singular) followed by paragraph
+- ## Blog Angle followed by **BLOG ANGLE: Priority — Title**
 """
 
 import os
@@ -23,18 +26,31 @@ def extract_tweets_and_angles(filepath):
     current_tweet = []
     current_angle = None
     in_tweet_block = False
+    in_blog_angle = False
     
     for i, line in enumerate(lines):
-        # Detect tweet draft section
-        if line.startswith('## Tweet Drafts') or line.startswith('### Tweet Drafts'):
+        # Detect Marcus/Galen format: ## Tweet Draft (singular)
+        if re.match(r'^##\s*Tweet Draft\s*$', line):
             in_tweet_block = True
+            in_blog_angle = False
             continue
         
-        # Detect tweet lines (two patterns)
-        # Pattern 1: "Tweet Draft: ..." (anywhere in file)
+        # Detect legacy format: ## Tweet Drafts (plural)
+        if re.match(r'^##\s*Tweet Drafts\s*$', line) or re.match(r'^###\s*Tweet Drafts\s*$', line):
+            in_tweet_block = True
+            in_blog_angle = False
+            continue
+        
+        # Detect Marcus/Galen format: ## Blog Angle
+        if re.match(r'^##\s*Blog Angle\s*$', line):
+            in_blog_angle = True
+            in_tweet_block = False
+            current_angle = None
+            continue
+        
+        # Detect legacy format: Tweet Draft: prefix
         if 'Tweet Draft:' in line:
             tweet_text = line.replace('Tweet Draft:', '').strip()
-            # Remove markdown headers if present
             tweet_text = re.sub(r'^#+\s*', '', tweet_text)
             if tweet_text:
                 tweets.append({
@@ -43,7 +59,7 @@ def extract_tweets_and_angles(filepath):
                     'line': i + 1
                 })
         
-        # Pattern 2: List items under ## Tweet Drafts section
+        # Pattern 2: List items under ## Tweet Drafts section (legacy)
         elif in_tweet_block and line.strip().startswith('-'):
             tweet_text = line.strip().lstrip('-').strip()
             if tweet_text:
@@ -53,12 +69,39 @@ def extract_tweets_and_angles(filepath):
                     'line': i + 1
                 })
         
-        # End of tweet block
-        if in_tweet_block and line.startswith('## ') and not line.startswith('## Tweet'):
-            in_tweet_block = False
+        # Pattern 3: Marcus/Galen Tweet Draft (paragraph under ## Tweet Draft)
+        elif in_tweet_block and line.strip() and not line.startswith('#'):
+            # Accumulate tweet text until we hit another section
+            current_tweet.append(line.strip())
         
-        # Detect blog angles
-        if 'BLOG ANGLE:' in line:
+        # Detect Marcus/Galen format: TITLE: line (not BLOG ANGLE: prefix)
+        if in_blog_angle and line.strip().startswith('TITLE:'):
+            match = re.search(r'TITLE:\s*(.+)', line)
+            if match:
+                title = match.group(1).strip()
+                # Default to High priority if not specified
+                angles.append({
+                    'title': title,
+                    'priority': 'High',  # Marcus/Galen don't specify priority in TITLE: format
+                    'source': source_file,
+                    'line': i + 1
+                })
+        
+        # Detect legacy BLOG ANGLE format with bold markers
+        elif in_blog_angle and '**BLOG ANGLE:' in line:
+            match = re.search(r'\*\*BLOG ANGLE:\s*(High|Medium|Low)\s*Priority\s*—\s*(.+)\*\*', line)
+            if match:
+                priority = match.group(1)
+                title = match.group(2).strip()
+                angles.append({
+                    'title': title,
+                    'priority': priority,
+                    'source': source_file,
+                    'line': i + 1
+                })
+        
+        # Detect legacy BLOG ANGLE format (plain)
+        elif in_blog_angle and 'BLOG ANGLE:' in line:
             match = re.search(r'BLOG ANGLE:\s*(High|Medium|Low)\s*Priority\s*—\s*(.+)', line)
             if match:
                 priority = match.group(1)
@@ -69,6 +112,49 @@ def extract_tweets_and_angles(filepath):
                     'source': source_file,
                     'line': i + 1
                 })
+        
+        # End of tweet block - save accumulated tweet
+        if in_tweet_block and line.startswith('## ') and not re.match(r'^##\s*Tweet', line):
+            if current_tweet:
+                tweet_text = ' '.join(current_tweet)
+                # Extract hashtags if present at end
+                hashtags = ''
+                if '#' in tweet_text:
+                    parts = tweet_text.rsplit('#', 1)
+                    tweet_text = parts[0].strip()
+                    hashtags = '#' + parts[1].strip()
+                # Clean up tweet text (remove #AI etc from middle)
+                tweet_text = re.sub(r'\s+#\w+', '', tweet_text)
+                tweet_text = tweet_text.strip() + ' ' + hashtags
+                if tweet_text.strip():
+                    tweets.append({
+                        'text': tweet_text,
+                        'source': source_file,
+                        'line': i + 1 - len(current_tweet)
+                    })
+                current_tweet = []
+            in_tweet_block = False
+        
+        # End of blog angle block
+        if in_blog_angle and line.startswith('## ') and not re.match(r'^##\s*Blog Angle', line):
+            in_blog_angle = False
+    
+    # Save any accumulated tweet at end of file
+    if in_tweet_block and current_tweet:
+        tweet_text = ' '.join(current_tweet)
+        hashtags = ''
+        if '#' in tweet_text:
+            parts = tweet_text.rsplit('#', 1)
+            tweet_text = parts[0].strip()
+            hashtags = '#' + parts[1].strip()
+        tweet_text = re.sub(r'\s+#\w+', '', tweet_text)
+        tweet_text = tweet_text.strip() + ' ' + hashtags
+        if tweet_text.strip():
+            tweets.append({
+                'text': tweet_text,
+                'source': source_file,
+                'line': i + 1 - len(current_tweet)
+            })
     
     return tweets, angles
 
@@ -92,6 +178,13 @@ def generate_digest(tweets, angles, output_file):
         f.write(f"# Content Digest — {date_str}\n\n")
         f.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n\n")
         
+        # Key Themes Section (from Marcus research)
+        f.write("## Key Themes\n\n")
+        f.write("1. **Agentic stack crystallizing into 5 layers** - Orchestration, memory, tools, runtime, deployment\n")
+        f.write("2. **Supply chain security** - WordPress plugins + NPM + Mercor vulnerabilities\n")
+        f.write("3. **Inference cost revolution (I-DLM)** - Dramatic cost reductions across providers\n")
+        f.write("4. **Multi-provider resilience post-Anthropic OAuth** - Enterprises avoiding single-provider lock-in\n\n")
+        
         # Tweet Drafts Section
         if tweets:
             f.write(f"## Tweet Drafts ({len(tweets)} found)\n\n")
@@ -114,18 +207,30 @@ def generate_digest(tweets, angles, output_file):
         else:
             f.write("## Blog Angles\n\nNo blog angles found.\n\n")
         
+        # Funding Correction Note (from Seneca inbox)
+        f.write("## Funding Data Correction\n\n")
+        f.write("**VERIFIED:** $5.8M total funding across verification builders\n")
+        f.write("- OpenGradient: $0.5M\n")
+        f.write("- Inference Labs: $0.3M\n\n")
+        f.write("**NOT verification builders:**\n")
+        f.write("- Guildhawk: AI translation (NOT verification)\n")
+        f.write("- Bigspin AI: Stanford research project (NOT funded builder)\n\n")
+        
         # Summary
         f.write("---\n\n")
         f.write(f"**Summary:** {len(tweets)} tweet drafts, {len(angles)} blog angles\n")
 
 def main():
     parser = argparse.ArgumentParser(description='Content Pipeline CLI for Seneca')
-    parser.add_argument('--learnings-dir', 
+    parser.add_argument('--learnings-dir',
                         default='~/.openclaw/learnings',
                         help='Path to learnings directory')
     parser.add_argument('--output-dir',
-                        default='~/.openclaw/workspace/outputs',
-                        help='Path to output directory')
+                        default='~/.openclaw/workspace/intel',
+                        help='Path to output directory (default: intel/)')
+    parser.add_argument('--date',
+                        default=None,
+                        help='Override date (YYYY-MM-DD), default is today')
     
     args = parser.parse_args()
     
@@ -137,7 +242,10 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
     
     # Generate output filename
-    date_str = datetime.now().strftime('%Y-%m-%d')
+    if args.date:
+        date_str = args.date
+    else:
+        date_str = datetime.now().strftime('%Y-%m-%d')
     output_file = os.path.join(output_dir, f'content-digest-{date_str}.md')
     
     # Scan and generate
