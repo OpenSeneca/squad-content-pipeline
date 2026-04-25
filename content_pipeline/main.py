@@ -167,7 +167,7 @@ def scan_learnings_directory(learnings_dir, target_date=None):
     all_tweets = []
     all_angles = []
     
-    for filepath in Path(learnings_dir).glob('*.md'):
+    for filepath in Path(learnings_dir).rglob('*.md'):
         # Filter by date if specified
         if target_date:
             # Check if filename starts with the target date
@@ -255,15 +255,15 @@ def main():
     learnings_dir = os.path.expanduser(args.learnings_dir)
     output_dir = os.path.expanduser(args.output_dir)
     
-    # Ensure output directory exists
-    os.makedirs(output_dir, exist_ok=True)
-    
     # Generate output filename
     if args.date:
         date_str = args.date
     else:
         date_str = datetime.now().strftime('%Y-%m-%d')
     output_file = os.path.join(output_dir, f'content-digest-{date_str}.md')
+    
+    # Ensure output directory exists
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     
     # Scan and generate
     if args.date:

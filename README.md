@@ -5,19 +5,29 @@ outputs daily digest to workspace/outputs/.
 
 ## Installation
 
+### From PyPI (recommended)
 ```bash
-cd ~/.openclaw/workspace/tools/content-pipeline
-chmod +x main.py
+pip install content-pipeline
+```
+
+### From source
+```bash
+git clone https://github.com/OpenSeneca/content-pipeline.git
+cd content-pipeline
+pip install -e .
 ```
 
 ## Usage
 
 ```bash
 # Generate digest (default: scans ~/.openclaw/learnings)
-python3 main.py
+content-digest
 
 # Custom directories
-python3 main.py --learnings-dir /path/to/learnings --output-dir /path/to/outputs
+content-digest --learnings-dir /path/to/learnings --output-dir /path/to/outputs
+
+# Specify date
+content-digest --date 2026-04-17
 ```
 
 ## Output
@@ -32,7 +42,7 @@ Sections:
 
 Cron job (daily at 8 AM UTC):
 ```bash
-0 8 * * * cd ~/.openclaw/workspace/tools/content-pipeline && python3 main.py >> /var/log/content-pipeline.log 2>&1
+0 8 * * * content-digest >> /var/log/content-pipeline.log 2>&1
 ```
 
 ## Features
@@ -48,7 +58,7 @@ Cron job (daily at 8 AM UTC):
 
 ```bash
 # Run manually
-python3 main.py
+content-digest
 
 # Check output
 cat ~/.openclaw/workspace/outputs/content-digest-$(date +%Y-%m-%d).md
@@ -56,8 +66,8 @@ cat ~/.openclaw/workspace/outputs/content-digest-$(date +%Y-%m-%d).md
 
 ## Status
 
-**Tool Status:** ✅ Built, tested, deployed
-**Last Run:** 2026-03-10 09:29 UTC
-**Output:** 15 tweets, 84 blog angles
+**Tool Status:** ✅ Built, tested, deployed, published to PyPI
+**Last Run:** 2026-04-25 21:27 UTC
+**Version:** 1.1.0
 
-Last updated: 2026-03-10
+Last updated: 2026-04-25

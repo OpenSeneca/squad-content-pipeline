@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="content-pipeline",
-    version="1.0.0",
+    version="1.1.0",
     description="CLI tool to extract tweet drafts and blog angles from agent learnings",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -11,7 +11,7 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'content-digest=main:main',
+            'content-digest=content_pipeline.main:main',
         ],
     },
     python_requires=">=3.7",
