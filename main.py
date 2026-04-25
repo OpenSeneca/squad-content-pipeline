@@ -31,6 +31,16 @@ def extract_tweets_and_angles(filepath):
     for i, line in enumerate(lines):
         # Detect Marcus/Galen format: ## Tweet Draft (singular)
         if re.match(r'^##\s*Tweet Draft\s*$', line):
+            # Save previous tweet if exists (start of new tweet block)
+            if in_tweet_block and current_tweet:
+                tweet_text = ' '.join(current_tweet)
+                if tweet_text.strip():
+                    tweets.append({
+                        'text': tweet_text,
+                        'source': source_file,
+                        'line': i + 1 - len(current_tweet)
+                    })
+                current_tweet = []
             in_tweet_block = True
             in_blog_angle = False
             continue
@@ -43,6 +53,16 @@ def extract_tweets_and_angles(filepath):
         
         # Detect Marcus/Galen format: ## Blog Angle
         if re.match(r'^##\s*Blog Angle\s*$', line):
+            # Save any accumulated tweet before switching to blog angle mode
+            if in_tweet_block and current_tweet:
+                tweet_text = ' '.join(current_tweet)
+                if tweet_text.strip():
+                    tweets.append({
+                        'text': tweet_text,
+                        'source': source_file,
+                        'line': i + 1 - len(current_tweet)
+                    })
+                current_tweet = []
             in_blog_angle = True
             in_tweet_block = False
             current_angle = None
@@ -74,22 +94,22 @@ def extract_tweets_and_angles(filepath):
             # Accumulate tweet text until we hit another section
             current_tweet.append(line.strip())
         
-        # Detect Marcus/Galen format: TITLE: line (not BLOG ANGLE: prefix)
-        if in_blog_angle and line.strip().startswith('TITLE:'):
-            match = re.search(r'TITLE:\s*(.+)', line)
+        # Detect Marcus/Galen format: **BLOG ANGLE: Title** (no priority field)
+        if in_blog_angle and '**BLOG ANGLE:' in line:
+            match = re.search(r'\*\*BLOG ANGLE:\s*(.+)\*\*', line)
             if match:
                 title = match.group(1).strip()
-                # Default to High priority if not specified
+                # Default to High priority for squad format
                 angles.append({
                     'title': title,
-                    'priority': 'High',  # Marcus/Galen don't specify priority in TITLE: format
+                    'priority': 'High',
                     'source': source_file,
                     'line': i + 1
                 })
         
-        # Detect legacy BLOG ANGLE format with bold markers
-        elif in_blog_angle and '**BLOG ANGLE:' in line:
-            match = re.search(r'\*\*BLOG ANGLE:\s*(High|Medium|Low)\s*Priority\s*—\s*(.+)\*\*', line)
+        # Detect legacy BLOG ANGLE format with priority field
+        elif in_blog_angle and 'BLOG ANGLE:' in line and '**BLOG ANGLE:' not in line:
+            match = re.search(r'BLOG ANGLE:\s*(High|Medium|Low)\s*Priority\s*—\s*(.+)', line)
             if match:
                 priority = match.group(1)
                 title = match.group(2).strip()
@@ -100,9 +120,9 @@ def extract_tweets_and_angles(filepath):
                     'line': i + 1
                 })
         
-        # Detect legacy BLOG ANGLE format (plain)
-        elif in_blog_angle and 'BLOG ANGLE:' in line:
-            match = re.search(r'BLOG ANGLE:\s*(High|Medium|Low)\s*Priority\s*—\s*(.+)', line)
+        # Detect legacy format with bold markers and priority (old squad format)
+        elif in_blog_angle and '**BLOG ANGLE:' in line and 'Priority —' in line:
+            match = re.search(r'\*\*BLOG ANGLE:\s*(High|Medium|Low)\s*Priority\s*—\s*(.+)\*\*', line)
             if match:
                 priority = match.group(1)
                 title = match.group(2).strip()
@@ -117,15 +137,6 @@ def extract_tweets_and_angles(filepath):
         if in_tweet_block and line.startswith('## ') and not re.match(r'^##\s*Tweet', line):
             if current_tweet:
                 tweet_text = ' '.join(current_tweet)
-                # Extract hashtags if present at end
-                hashtags = ''
-                if '#' in tweet_text:
-                    parts = tweet_text.rsplit('#', 1)
-                    tweet_text = parts[0].strip()
-                    hashtags = '#' + parts[1].strip()
-                # Clean up tweet text (remove #AI etc from middle)
-                tweet_text = re.sub(r'\s+#\w+', '', tweet_text)
-                tweet_text = tweet_text.strip() + ' ' + hashtags
                 if tweet_text.strip():
                     tweets.append({
                         'text': tweet_text,
@@ -142,13 +153,6 @@ def extract_tweets_and_angles(filepath):
     # Save any accumulated tweet at end of file
     if in_tweet_block and current_tweet:
         tweet_text = ' '.join(current_tweet)
-        hashtags = ''
-        if '#' in tweet_text:
-            parts = tweet_text.rsplit('#', 1)
-            tweet_text = parts[0].strip()
-            hashtags = '#' + parts[1].strip()
-        tweet_text = re.sub(r'\s+#\w+', '', tweet_text)
-        tweet_text = tweet_text.strip() + ' ' + hashtags
         if tweet_text.strip():
             tweets.append({
                 'text': tweet_text,
@@ -158,12 +162,19 @@ def extract_tweets_and_angles(filepath):
     
     return tweets, angles
 
-def scan_learnings_directory(learnings_dir):
-    """Scan all markdown files in learnings/ for content."""
+def scan_learnings_directory(learnings_dir, target_date=None):
+    """Scan markdown files in learnings/ for content. If target_date is provided, only scan files from that date."""
     all_tweets = []
     all_angles = []
     
     for filepath in Path(learnings_dir).glob('*.md'):
+        # Filter by date if specified
+        if target_date:
+            # Check if filename starts with the target date
+            filename = os.path.basename(filepath)
+            if not filename.startswith(target_date):
+                continue
+        
         tweets, angles = extract_tweets_and_angles(filepath)
         all_tweets.extend(tweets)
         all_angles.extend(angles)
@@ -172,7 +183,13 @@ def scan_learnings_directory(learnings_dir):
 
 def generate_digest(tweets, angles, output_file):
     """Generate daily digest markdown file."""
-    date_str = datetime.now().strftime('%Y-%m-%d')
+    # Extract date from output_file filename (format: content-digest-YYYY-MM-DD.md)
+    basename = os.path.basename(output_file)
+    match = re.search(r'content-digest-(\d{4}-\d{2}-\d{2})', basename)
+    if match:
+        date_str = match.group(1)
+    else:
+        date_str = datetime.now().strftime('%Y-%m-%d')
     
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(f"# Content Digest — {date_str}\n\n")
@@ -230,7 +247,7 @@ def main():
                         help='Path to output directory (default: intel/)')
     parser.add_argument('--date',
                         default=None,
-                        help='Override date (YYYY-MM-DD), default is today')
+                        help='Filter learnings files by date (YYYY-MM-DD), default scans all files')
     
     args = parser.parse_args()
     
@@ -249,8 +266,12 @@ def main():
     output_file = os.path.join(output_dir, f'content-digest-{date_str}.md')
     
     # Scan and generate
-    print(f"Scanning {learnings_dir} for content...")
-    tweets, angles = scan_learnings_directory(learnings_dir)
+    if args.date:
+        print(f"Scanning {learnings_dir} for content from {args.date}...")
+        tweets, angles = scan_learnings_directory(learnings_dir, target_date=args.date)
+    else:
+        print(f"Scanning {learnings_dir} for content (all dates)...")
+        tweets, angles = scan_learnings_directory(learnings_dir)
     print(f"Found {len(tweets)} tweet drafts, {len(angles)} blog angles")
     
     print(f"Generating digest at {output_file}...")
