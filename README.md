@@ -1,16 +1,15 @@
-# Content Pipeline CLI - README
+# Content Pipeline CLI
 
-Scans Marcus/Galen learnings/ for tweet drafts and blog angles,
-outputs daily digest to workspace/outputs/.
+CLI tool to extract tweet drafts and blog angles from agent learnings, output daily digests to `workspace/outputs/` or `workspace/intel/`.
 
 ## Installation
 
-### From PyPI (recommended)
+### From PyPI (Recommended)
 ```bash
 pip install content-pipeline
 ```
 
-### From source
+### From Source
 ```bash
 git clone https://github.com/OpenSeneca/content-pipeline.git
 cd content-pipeline
@@ -19,55 +18,51 @@ pip install -e .
 
 ## Usage
 
+### Standard Mode (outputs to workspace/outputs/)
 ```bash
-# Generate digest (default: scans ~/.openclaw/learnings)
-content-digest
-
-# Custom directories
-content-digest --learnings-dir /path/to/learnings --output-dir /path/to/outputs
-
-# Specify date
-content-digest --date 2026-04-17
+python3 main.py
 ```
+Generates `content-digest-YYYY-MM-DD.md` in `workspace/outputs/` with ALL learnings content.
 
-## Output
+### Intel Mode (outputs to workspace/intel/ for Seneca)
+```bash
+python3 main.py --date 2026-04-14 --intel-mode
+```
+Generates date-specific digest in `workspace/intel/` from learnings matching that date.
 
-Generates daily digest: `content-digest-YYYY-MM-DD.md`
+### Options
+- `--learnings-dirs DIR1 DIR2 ...` - Directories to scan (default: ~/.openclaw/learnings and ~/.openclaw/learnings/archive-research)
+- `--output-dir DIR` - Output directory for standard mode (default: ~/.openclaw/workspace/outputs)
+- `--date YYYY-MM-DD` - Target date for intel mode (only processes files matching this date)
+- `--intel-mode` - Intel mode: output to workspace/intel/ and only process date-matched files
 
-Sections:
-- Tweet Drafts (extracted from "Tweet Draft:" lines or under ## Tweet Drafts)
-- Blog Angles (extracted from "BLOG ANGLE: [High/Medium/Low] Priority — ...")
+## Supported Formats
+
+### Tweet Drafts
+1. `## Tweet Draft` followed by paragraph
+2. `Tweet Draft: <text>` prefix
+3. List items under `## Tweet Drafts` section
+
+### Blog Angles
+1. `## Blog Angle` followed by `**BLOG ANGLE: TITLE** — description`
+2. `## Blog Angle: TITLE` on single line
+3. `BLOG ANGLE: High/Medium/Low Priority — Title` prefix
 
 ## Deployment
 
-Cron job (daily at 8 AM UTC):
+Cron job runs daily at 8 AM UTC via `~/.openclaw/scripts/run-content-digest.sh`.
+
 ```bash
-0 8 * * * content-digest >> /var/log/content-pipeline.log 2>&1
+# Cron entry (run with crontab -e)
+0 8 * * * /home/exedev/.openclaw/scripts/run-content-digest.sh >> ~/.openclaw/logs/content-digest.log 2>&1
 ```
-
-## Features
-
-- ✅ Scans all .md files in learnings directory
-- ✅ Extracts tweet drafts (two patterns supported)
-- ✅ Extracts blog angles with priority levels
-- ✅ Sorts blog angles by priority (High > Medium > Low)
-- ✅ Tracks source file and line number
-- ✅ Generates timestamped daily digest
 
 ## Testing
 
 ```bash
-# Run manually
-content-digest
+# Test April 14 digest
+python3 main.py --date 2026-04-14 --intel-mode --learnings-dirs ~/.openclaw/learnings/archive-research/2026-04-scope-violations
 
-# Check output
-cat ~/.openclaw/workspace/outputs/content-digest-$(date +%Y-%m-%d).md
+# Test April 17 digest
+python3 main.py --date 2026-04-17 --intel-mode --learnings-dirs ~/.openclaw/learnings/archive-research/2026-04-scope-violations
 ```
-
-## Status
-
-**Tool Status:** ✅ Built, tested, deployed, published to PyPI
-**Last Run:** 2026-04-25 21:27 UTC
-**Version:** 1.1.0
-
-Last updated: 2026-04-25
