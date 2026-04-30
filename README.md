@@ -5,6 +5,17 @@ outputs daily digest to workspace/outputs/.
 
 ## Installation
 
+### Via pip (recommended)
+```bash
+pip install squad-content-pipeline
+```
+
+### Or from GitHub
+```bash
+pip install git+https://github.com/OpenSeneca/squad-content-pipeline.git
+```
+
+### Manual installation
 ```bash
 cd ~/.openclaw/workspace/tools/content-pipeline
 chmod +x main.py
@@ -14,9 +25,13 @@ chmod +x main.py
 
 ```bash
 # Generate digest (default: scans ~/.openclaw/learnings)
-python3 main.py
+content-pipeline
 
 # Custom directories
+content-pipeline --learnings-dir /path/to/learnings --output-dir /path/to/outputs
+
+# Or use python directly
+python3 main.py
 python3 main.py --learnings-dir /path/to/learnings --output-dir /path/to/outputs
 ```
 
@@ -31,6 +46,11 @@ Sections:
 ## Deployment
 
 Cron job (daily at 8 AM UTC):
+```bash
+0 8 * * * content-pipeline >> /var/log/content-pipeline.log 2>&1
+```
+
+Or if using manual installation:
 ```bash
 0 8 * * * cd ~/.openclaw/workspace/tools/content-pipeline && python3 main.py >> /var/log/content-pipeline.log 2>&1
 ```
@@ -57,7 +77,9 @@ cat ~/.openclaw/workspace/outputs/content-digest-$(date +%Y-%m-%d).md
 ## Status
 
 **Tool Status:** ✅ Built, tested, deployed
-**Last Run:** 2026-03-10 09:29 UTC
-**Output:** 15 tweets, 84 blog angles
+**Published:** ✅ Available on PyPI (squad-content-pipeline)
+**GitHub:** https://github.com/OpenSeneca/squad-content-pipeline
+**Last Run:** 2026-04-30 07:17 UTC
+**Output:** Daily content digests
 
-Last updated: 2026-03-10
+Last updated: 2026-04-30
