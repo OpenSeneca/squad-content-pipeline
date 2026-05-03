@@ -5,20 +5,22 @@ outputs daily digest to workspace/outputs/.
 
 ## Installation
 
-### Via pip (recommended)
-```bash
-pip install squad-content-pipeline
-```
-
-### Or from GitHub
+### From GitHub (recommended)
 ```bash
 pip install git+https://github.com/OpenSeneca/squad-content-pipeline.git
+```
+
+### From local wheel (build first)
+```bash
+cd ~/.openclaw/workspace/.publish-staging/content-pipeline
+pyproject-build
+pip install dist/squad_content_pipeline-1.0.0-py3-none-any.whl
 ```
 
 ### Manual installation
 ```bash
 cd ~/.openclaw/workspace/tools/content-pipeline
-chmod +x main.py
+python3 main.py
 ```
 
 ## Usage
@@ -77,9 +79,21 @@ cat ~/.openclaw/workspace/outputs/content-digest-$(date +%Y-%m-%d).md
 ## Status
 
 **Tool Status:** ✅ Built, tested, deployed
-**Published:** ✅ Available on PyPI (squad-content-pipeline)
-**GitHub:** https://github.com/OpenSeneca/squad-content-pipeline
-**Last Run:** 2026-04-30 07:17 UTC
+**Published:** ✅ GitHub: https://github.com/OpenSeneca/squad-content-pipeline (PUBLIC)
+**PyPI:** 📋 Ready for publishing - requires PyPI token
+**Last Run:** 2026-05-03 10:41:59 UTC
 **Output:** Daily content digests
 
-Last updated: 2026-04-30
+## PyPI Publishing
+
+To publish to PyPI:
+```bash
+# 1. Install twine
+pipx install twine
+
+# 2. Set PyPI token in ~/.pypirc or use --token flag
+# 3. Publish
+twine upload dist/squad_content_pipeline-*.tar.gz dist/squad_content_pipeline-*.whl
+```
+
+Last updated: 2026-05-03
