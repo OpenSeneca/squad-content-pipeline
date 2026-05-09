@@ -15,7 +15,7 @@ authors = [
 urls = {Homepage = "https://github.com/OpenSeneca/squad-content-pipeline"}
 
 [project.scripts]
-content-pipeline = "main:main"
+content-digest = "main:main"
 
 [tool.setuptools]
 py-modules = ["main"]

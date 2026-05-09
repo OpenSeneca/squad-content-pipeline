@@ -14,7 +14,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "content-pipeline=main:main",
+            "content-digest=main:main",
         ],
     },
     python_requires=">=3.8",
