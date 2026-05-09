@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="squad-content-pipeline",
-    version="1.0.0",
+    version="1.2.0",
     description="Content Pipeline CLI for Seneca - Scans learnings/ for tweet drafts and blog angles",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
