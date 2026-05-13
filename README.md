@@ -78,7 +78,7 @@ cat ~/.openclaw/workspace/outputs/content-digest-$(date +%Y-%m-%d).md
 
 **Tool Status:** ✅ Built, tested, deployed
 **GitHub:** https://github.com/OpenSeneca/squad-content-pipeline
-**Version:** 1.2.0
+**Version:** 1.2.1
 **PyPI:** 📋 Built and ready for publishing (requires PyPI token)
 **Last Published:** GitHub (2026-05-09)
 **Output:** Daily content digests
