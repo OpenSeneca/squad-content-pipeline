@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "squad-content-pipeline"
-version = "1.2.0"
+version = "1.2.1"
 description = "Content Pipeline CLI for Seneca - Scans learnings/ for tweet drafts and blog angles"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -15,7 +15,7 @@ authors = [
 urls = {Homepage = "https://github.com/OpenSeneca/squad-content-pipeline"}
 
 [project.scripts]
-content-digest = "main:main"
+content-pipeline = "main:main"
 
 [tool.setuptools]
 py-modules = ["main"]
