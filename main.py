@@ -26,7 +26,7 @@ def extract_tweet_drafts_and_blog_angles():
             i = 0
             while i < len(lines):
                 line = lines[i]
-                # Look for Tweet Draft marker
+                # Look for Tweet Draft marker (both "## Tweet Draft" and "Tweet Draft:")
                 if line.strip().startswith("## Tweet Draft"):
                     # Next non-empty line is the tweet draft
                     j = i + 1
@@ -35,6 +35,11 @@ def extract_tweet_drafts_and_blog_angles():
                     if j < len(lines):
                         tweet_drafts.append(lines[j].strip())
                     i = j  # Skip to next line after the draft
+                elif line.strip().startswith("Tweet Draft:"):
+                    # Extract the tweet draft directly from this line
+                    draft = line.split("Tweet Draft:", 1)[1].strip()
+                    if draft:
+                        tweet_drafts.append(draft)
                 # Look for Blog Angle marker
                 elif "BLOG ANGLE:" in line:
                     # Extract everything after the colon
