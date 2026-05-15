@@ -1,4 +1,4 @@
-# Content Pipeline CLI - README
+# Content Digest CLI - README
 
 Scans Marcus/Galen learnings/ for tweet drafts and blog angles,
 outputs daily digest to workspace/outputs/.
@@ -25,10 +25,10 @@ python3 main.py
 
 ```bash
 # Generate digest (default: scans ~/.openclaw/learnings)
-content-pipeline
+content-digest
 
 # Custom directories
-content-pipeline --learnings-dir /path/to/learnings --output-dir /path/to/outputs
+content-digest --learnings-dir /path/to/learnings --output-dir /path/to/outputs
 
 # Or use python directly
 python3 main.py
@@ -47,12 +47,12 @@ Sections:
 
 Cron job (daily at 8 AM UTC):
 ```bash
-0 8 * * * content-pipeline >> /var/log/content-pipeline.log 2>&1
+0 8 * * * content-digest >> /var/log/content-digest.log 2>&1
 ```
 
 Or if using manual installation:
 ```bash
-0 8 * * * cd ~/.openclaw/workspace/tools/content-pipeline && python3 main.py >> /var/log/content-pipeline.log 2>&1
+0 8 * * * cd ~/.openclaw/workspace/tools/content-pipeline && python3 main.py >> /var/log/content-digest.log 2>&1
 ```
 
 ## Features
@@ -78,9 +78,9 @@ cat ~/.openclaw/workspace/outputs/content-digest-$(date +%Y-%m-%d).md
 
 **Tool Status:** ✅ Built, tested, deployed
 **GitHub:** https://github.com/OpenSeneca/squad-content-pipeline
-**Version:** 1.3.0
-**PyPI:** 📋 Built and ready for publishing (requires PyPI token)
-**Last Published:** GitHub (2026-05-14)
+**Version:** 1.4.0
+**PyPI:** 📋 Ready for publishing (requires PyPI token)
+**Last Published:** GitHub (2026-05-15)
 **Output:** Daily content digests
 
 ## PyPI Publishing
@@ -99,4 +99,4 @@ After publishing, users can install with:
 pip install squad-content-pipeline
 ```
 
-Last updated: 2026-05-09
+Last updated: 2026-05-15
