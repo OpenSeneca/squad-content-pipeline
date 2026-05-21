@@ -4,13 +4,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "squad-content-digest"
-version = "1.4.0"
+version = "1.4.1"
 description = "Content Digest CLI for Seneca - Scans learnings/ for tweet drafts and blog angles"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
     {name = "OpenSeneca"}
+]
+keywords = ["content", "digest", "cli", "tweets", "blog"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
 ]
 
 [project.scripts]
@@ -19,3 +32,4 @@ content-digest = "content_pipeline.main:main"
 [project.urls]
 Homepage = "https://github.com/OpenSeneca/squad-content-pipeline"
 Repository = "https://github.com/OpenSeneca/squad-content-pipeline"
+Issues = "https://github.com/OpenSeneca/squad-content-pipeline/issues"

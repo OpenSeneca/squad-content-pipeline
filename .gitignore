@@ -13,3 +13,8 @@ build/
 htmlcov/
 .env
 secrets.env
+.venv/
+*.egg-info/
+*.pth
+__pycache__/
+

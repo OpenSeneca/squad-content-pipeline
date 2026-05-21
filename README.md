@@ -7,7 +7,7 @@ outputs daily digest to workspace/outputs/.
 
 ### From PyPI (recommended after publishing)
 ```bash
-pip install squad-content-pipeline
+pip install squad-content-digest
 ```
 
 ### From GitHub
@@ -30,6 +30,9 @@ content-digest
 # Custom directories
 content-digest --learnings-dir /path/to/learnings --output-dir /path/to/outputs
 
+# Filter by date
+content-digest --date 2026-05-20
+
 # Or use python directly
 python3 main.py
 python3 main.py --learnings-dir /path/to/learnings --output-dir /path/to/outputs
@@ -40,8 +43,8 @@ python3 main.py --learnings-dir /path/to/learnings --output-dir /path/to/outputs
 Generates daily digest: `content-digest-YYYY-MM-DD.md`
 
 Sections:
-- Tweet Drafts (extracted from "Tweet Draft:" lines or under ## Tweet Drafts)
-- Blog Angles (extracted from "BLOG ANGLE: [High/Medium/Low] Priority — ...")
+- Tweet Drafts (extracted from "## Tweet Draft" sections or "Tweet Draft:" lines)
+- Blog Angles (extracted from "BLOG ANGLE:" lines)
 
 ## Deployment
 
@@ -50,53 +53,15 @@ Cron job (daily at 8 AM UTC):
 0 8 * * * content-digest >> /var/log/content-digest.log 2>&1
 ```
 
-Or if using manual installation:
-```bash
-0 8 * * * cd ~/.openclaw/workspace/tools/content-pipeline && python3 main.py >> /var/log/content-digest.log 2>&1
-```
+Current setup uses: `bash ~/.openclaw/scripts/run-content-digest.sh`
+which runs the installed package via `content-digest` command.
 
-## Features
+## Version History
 
-- ✅ Scans all .md files in learnings directory
-- ✅ Extracts tweet drafts (two patterns supported)
-- ✅ Extracts blog angles with priority levels
-- ✅ Sorts blog angles by priority (High > Medium > Low)
-- ✅ Tracks source file and line number
-- ✅ Generates timestamped daily digest
+- **v1.4.1** (2026-05-20): Fix pyproject.toml entry point to use `main:main` instead of non-existent `content_pipeline.main`
+- **v1.4.0** (2026-05-20): Broken release - incorrect entry point
+- **v1.3.0** (2026-05-14): Initial published version
 
-## Testing
+## License
 
-```bash
-# Run manually
-python3 main.py
-
-# Check output
-cat ~/.openclaw/workspace/outputs/content-digest-$(date +%Y-%m-%d).md
-```
-
-## Status
-
-**Tool Status:** ✅ Built, tested, deployed
-**GitHub:** https://github.com/OpenSeneca/squad-content-pipeline
-**Version:** 1.4.0
-**PyPI:** 📋 Ready for publishing (requires PyPI token)
-**Last Published:** GitHub (2026-05-15)
-**Output:** Daily content digests
-
-## PyPI Publishing
-
-The package is built and ready to publish:
-```bash
-# 1. Configure PyPI token (one-time setup)
-./setup-pypi-token.sh <your-pypi-token>
-
-# 2. Publish to PyPI
-./deploy.sh
-```
-
-After publishing, users can install with:
-```bash
-pip install squad-content-pipeline
-```
-
-Last updated: 2026-05-15
+MIT License - See LICENSE file
