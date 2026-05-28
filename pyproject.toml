@@ -8,10 +8,8 @@ version = "1.4.1"
 description = "Content Digest CLI for Seneca - Scans learnings/ for tweet drafts and blog angles"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
-authors = [
-    {name = "OpenSeneca"}
-]
+license = {text = "MIT", files = ["LICENSE"]}
+authors = [{name = "OpenSeneca"}]
 keywords = ["content", "digest", "cli", "tweets", "blog"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -27,9 +25,13 @@ classifiers = [
 ]
 
 [project.scripts]
-content-digest = "content_pipeline.main:main"
+content-digest = "main:main"
 
 [project.urls]
 Homepage = "https://github.com/OpenSeneca/squad-content-pipeline"
 Repository = "https://github.com/OpenSeneca/squad-content-pipeline"
+<<<<<<< HEAD
 Issues = "https://github.com/OpenSeneca/squad-content-pipeline/issues"
+
+[tool.setuptools]
+py-modules = ["main"]

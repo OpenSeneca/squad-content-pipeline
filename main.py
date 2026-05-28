@@ -58,25 +58,35 @@ def main():
     output_file = OUTPUT_DIR / f"content-digest-{today}.md"
     
     with output_file.open('w', encoding='utf-8') as f:
-        f.write(f"# Content Digest for {today}\n\n")
+        f.write(f"# Content Digest - {today}\n\n")
+        f.write(f"📊 **Summary:** {len(tweet_drafts)} tweets, {len(blog_angles)} blog angles\n\n")
         
-        f.write("## Tweet Drafts\n")
+        f.write("## 🐦 Top Tweet Drafts\n")
         if tweet_drafts:
-            for i, draft in enumerate(tweet_drafts, 1):
-                f.write(f"{i}. {draft}\n")
+            for draft in tweet_drafts[:3]:  # Show top 3 only
+                f.write(f"  • {draft}\n")
+            if len(tweet_drafts) > 3:
+                f.write(f"  • ... and {len(tweet_drafts) - 3} more\n")
         else:
-            f.write("No tweet drafts found.\n")
+            f.write("  No tweet drafts found.\n")
         f.write("\n")
         
-        f.write("## Blog Angles\n")
+        f.write("## 📝 Top Blog Angles\n")
         if blog_angles:
-            for i, angle in enumerate(blog_angles, 1):
-                f.write(f"{i}. {angle}\n")
+            for angle in blog_angles[:3]:  # Show top 3 only
+                f.write(f"  • {angle}\n")
+            if len(blog_angles) > 3:
+                f.write(f"  • ... and {len(blog_angles) - 3} more\n")
         else:
-            f.write("No blog angles found.\n")
+            f.write("  No blog angles found.\n")
         f.write("\n")
+        
+        f.write("---\n")
+        f.write("*Full content available in Marcus/Galen learnings/*\n")
     
-    print(f"Content digest written to {output_file}")
+    print(f"✓ Content digest written to {output_file}")
+    print(f"  - Tweet drafts: {len(tweet_drafts)}")
+    print(f"  - Blog angles: {len(blog_angles)}")
 
 if __name__ == "__main__":
     main()
