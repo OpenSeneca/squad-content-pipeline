@@ -30,7 +30,6 @@ content-digest = "main:main"
 [project.urls]
 Homepage = "https://github.com/OpenSeneca/squad-content-pipeline"
 Repository = "https://github.com/OpenSeneca/squad-content-pipeline"
-<<<<<<< HEAD
 Issues = "https://github.com/OpenSeneca/squad-content-pipeline/issues"
 
 [tool.setuptools]
